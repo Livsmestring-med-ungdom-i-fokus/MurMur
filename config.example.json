@@ -1,0 +1,30 @@
+{
+  "audio": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bit_depth": 24,
+    "buffer_size": 4096
+  },
+  "studio": {
+    "num_tracks": 8,
+    "max_tracks": 32,
+    "tempo": 120,
+    "time_signature": [
+      4,
+      4
+    ]
+  },
+  "chatgpt": {
+    "enabled": false,
+    "model": "gpt-4",
+    "max_tokens": 1000,
+    "temperature": 0.7
+  },
+  "model": {
+    "model_type": "autoencoder",
+    "latent_dim": 128,
+    "seq_len": 128,
+    "n_mels": 80
+  },
+  "custom": {}
+}

@@ -2,7 +2,8 @@
 Music AI Studio Application
 
 Main entry point for the modular music production system.
-Integrates ChatGPT, Live Studio, and ML models.
+Integrates ChatGPT, Live Studio, ML models, and the five learning modules:
+Elements, Vocal, Dance, Artist Mode, and Learning.
 """
 
 import argparse
@@ -14,6 +15,11 @@ from music_ai_core.orchestrator import ModuleOrchestrator
 from music_ai_core.chatgpt_integration import ChatGPTModule
 from music_ai_core.live_studio import LiveMusicStudio
 from music_ai_core.model import SimpleAutoencoder
+from music_ai_core.elements import get_scale, get_chord, melody_from_scale, list_scales
+from music_ai_core.vocal import VocalSynthesizer
+from music_ai_core.dance import BeatGenerator, DANCE_GENRES, list_genres
+from music_ai_core.artist_mode import ArtistMode, list_styles
+from music_ai_core.learning import LearningSession, list_lessons, list_exercise_types
 
 
 class MusicAIStudio:
@@ -48,6 +54,22 @@ class MusicAIStudio:
         # AI Model
         self.model = SimpleAutoencoder(n_mels=80, latent_dim=128, seq_len=128)
         self.orchestrator.register_module("model", self.model)
+
+        # Vocal: vocal synthesizer
+        self.vocal = VocalSynthesizer(sample_rate=sample_rate)
+        self.orchestrator.register_module("vocal", self.vocal)
+
+        # Dance: beat generator
+        self.beat_generator = BeatGenerator(sample_rate=sample_rate)
+        self.orchestrator.register_module("beat_generator", self.beat_generator)
+
+        # Artist mode
+        self.artist_mode = ArtistMode()
+        self.orchestrator.register_module("artist_mode", self.artist_mode)
+
+        # Learning session
+        self.learning = LearningSession()
+        self.orchestrator.register_module("learning", self.learning)
         
         print("✓ Music AI Studio initialized")
         self._print_system_status()
@@ -135,7 +157,209 @@ class MusicAIStudio:
     def get_studio_state(self) -> dict:
         """Get current studio state."""
         return self.studio.get_studio_state()
+
+    # ------------------------------------------------------------------
+    # Elements helpers
+    # ------------------------------------------------------------------
+
+    def get_scale(self, root: str, scale_type: str = "major", octave: int = 4) -> list:
+        """Return the notes of a scale as (note_name, frequency) tuples."""
+        return get_scale(root, scale_type, octave)
+
+    def get_chord(self, root: str, chord_type: str = "major", octave: int = 4) -> list:
+        """Return the notes of a chord as (note_name, frequency) tuples."""
+        return get_chord(root, chord_type, octave)
+
+    def generate_scale_melody(
+        self,
+        track_name: str,
+        root: str = "C",
+        scale_type: str = "major",
+        octave: int = 4,
+        rhythm: str = "quarter_notes",
+        bpm: int = 120,
+        waveform: str = "sine",
+    ) -> None:
+        """
+        Generate a scale-based melody and write it to a studio track.
+
+        Args:
+            track_name: Target studio track
+            root: Scale root note
+            scale_type: Scale type (major, minor, pentatonic_major, …)
+            octave: Starting octave
+            rhythm: Rhythm pattern name
+            bpm: Tempo
+            waveform: Synthesizer waveform
+        """
+        notes = melody_from_scale(root, scale_type, octave, rhythm, bpm)
+        self.studio.generate_track(track_name, notes, waveform=waveform)
+        print(f"✓ Scale melody '{root} {scale_type}' → {track_name} ({len(notes)} notes)")
+
+    # ------------------------------------------------------------------
+    # Vocal helpers
+    # ------------------------------------------------------------------
+
+    def generate_vocal_line(
+        self,
+        track_name: str,
+        syllables: list,
+        frequencies: list,
+        durations: list,
+        vibrato_rate: float = 5.5,
+        chorus: bool = False,
+    ) -> None:
+        """
+        Synthesize a vocal line and write it to a studio track.
+
+        Args:
+            track_name: Target studio track
+            syllables: List of syllable strings
+            frequencies: Fundamental frequency per syllable (Hz)
+            durations: Duration per syllable (seconds)
+            vibrato_rate: Vibrato speed (Hz)
+            chorus: Whether to apply chorus effect
+        """
+        import numpy as np
+        audio = self.vocal.synthesize_vocal_line(
+            syllables, frequencies, durations, vibrato_rate=vibrato_rate
+        )
+        if chorus:
+            audio = self.vocal.add_chorus(audio)
+        self.studio.record_track(track_name, audio)
+        print(f"✓ Vocal line → {track_name} ({len(syllables)} syllables, "
+              f"{len(audio)/self.sample_rate:.2f}s)")
+
+    # ------------------------------------------------------------------
+    # Dance helpers
+    # ------------------------------------------------------------------
+
+    def generate_beat(
+        self,
+        genre: str = "house",
+        bpm: Optional[int] = None,
+        bars: int = 4,
+        humanize: float = 0.0,
+    ) -> None:
+        """
+        Generate a drum beat for the given genre and write to dedicated tracks.
+
+        Track names: ``beat_kick``, ``beat_snare``, ``beat_hihat_closed``,
+        ``beat_hihat_open``, ``beat_clap``.
+
+        Args:
+            genre: Dance genre (house, techno, hip_hop, trap, …)
+            bpm: Override genre default BPM
+            bars: Number of bars to generate
+            humanize: Timing randomness 0–1
+        """
+        tracks = self.beat_generator.generate_bar(genre, bpm=bpm, bars=bars, humanize=humanize)
+        for voice, audio in tracks.items():
+            track_name = f"beat_{voice}"
+            self.studio.record_track(track_name, audio)
+        genre_info = DANCE_GENRES[genre]
+        actual_bpm = bpm or genre_info.default_bpm
+        print(f"✓ Beat generated: {genre} @ {actual_bpm} BPM, {bars} bar(s)")
+
+    # ------------------------------------------------------------------
+    # Artist mode helpers
+    # ------------------------------------------------------------------
+
+    def build_arrangement(
+        self,
+        title: str = "Untitled",
+        style: Optional[str] = None,
+        key: Optional[str] = None,
+        bpm: Optional[int] = None,
+    ) -> dict:
+        """
+        Build a song arrangement using artist mode and return it as a dict.
+
+        Args:
+            title: Song title
+            style: Style preset (pop, edm, jazz, hip_hop, classical, reggae)
+            key: Override key
+            bpm: Override BPM
+
+        Returns:
+            Arrangement data as a plain dict.
+        """
+        arrangement = self.artist_mode.build_arrangement(
+            title=title, style=style, key=key, bpm=bpm
+        )
+        print(arrangement.summary())
+        return arrangement.to_dict()
+
+    def get_inspiration(self) -> dict:
+        """Return a random creative inspiration prompt from artist mode."""
+        inspiration = self.artist_mode.get_inspiration()
+        print("\n💡 Inspiration:")
+        for k, v in inspiration.items():
+            print(f"   {k.capitalize()}: {v}")
+        return inspiration
+
+    # ------------------------------------------------------------------
+    # Learning helpers
+    # ------------------------------------------------------------------
+
+    def start_lesson(self, lesson_id: str) -> dict:
+        """
+        Start a music theory lesson.
+
+        Args:
+            lesson_id: Lesson identifier (e.g. ``"el_01"``)
+
+        Returns:
+            Lesson metadata as a dict.
+        """
+        from music_ai_core.learning import LESSONS
+        lesson = self.learning.start_lesson(lesson_id)
+        print(f"\n📖 Lesson: {lesson.title} [{lesson.track} / {lesson.difficulty}]")
+        print(f"   {lesson.description}")
+        print(f"   Key concepts: {', '.join(lesson.key_concepts)}")
+        return {
+            "id": lesson.id,
+            "title": lesson.title,
+            "track": lesson.track,
+            "difficulty": lesson.difficulty,
+            "description": lesson.description,
+            "key_concepts": lesson.key_concepts,
+            "examples": lesson.examples,
+        }
+
+    def practice_exercise(
+        self, exercise_type: str = "note_identification", difficulty: str = "beginner"
+    ) -> dict:
+        """
+        Generate and display a practice exercise.
+
+        Args:
+            exercise_type: Type of exercise
+            difficulty: beginner / intermediate / advanced
+
+        Returns:
+            Exercise data as a dict (with options and correct answer).
+        """
+        exercise = self.learning.practice(exercise_type, difficulty=difficulty)
+        print(f"\n🎯 Exercise: {exercise.question}")
+        for i, opt in enumerate(exercise.options, start=1):
+            print(f"   {i}. {opt}")
+        return {
+            "id": exercise.id,
+            "question": exercise.question,
+            "options": exercise.options,
+            "correct_answer": exercise.correct_answer,
+            "explanation": exercise.explanation,
+            "hints": exercise.hints,
+        }
     
+    def get_learning_score(self) -> dict:
+        """Return the current learning session score."""
+        score = self.learning.get_score()
+        print(f"\n📊 Learning Score: {score['correct']}/{score['total']} "
+              f"({score['accuracy']}%)")
+        return score
+
     def _print_system_status(self) -> None:
         """Print system status."""
         status = self.orchestrator.get_system_info()

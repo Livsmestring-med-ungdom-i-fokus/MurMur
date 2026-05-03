@@ -10,6 +10,10 @@ import json
 from pathlib import Path
 
 from music_ai_studio import MusicAIStudio
+from music_ai_core.learning import list_lessons, list_exercise_types
+from music_ai_core.dance import list_genres, genre_description
+from music_ai_core.artist_mode import list_styles
+from music_ai_core.elements import list_scales, list_chords, list_rhythms
 
 
 def main():
@@ -76,9 +80,138 @@ Examples:
         type=int,
         help="Run example (1-5)"
     )
+
+    parser.add_argument(
+        "--elements",
+        action="store_true",
+        help="Show available scales, chords, and rhythms"
+    )
+
+    parser.add_argument(
+        "--dance",
+        type=str,
+        metavar="GENRE",
+        help="Generate a drum beat for GENRE (e.g. house, techno, hip_hop). "
+             "Use 'list' to show available genres."
+    )
+
+    parser.add_argument(
+        "--dance-bpm",
+        type=int,
+        default=None,
+        help="BPM override for --dance (default: genre default)"
+    )
+
+    parser.add_argument(
+        "--dance-bars",
+        type=int,
+        default=4,
+        help="Number of bars for --dance (default: 4)"
+    )
+
+    parser.add_argument(
+        "--artist",
+        type=str,
+        metavar="STYLE",
+        help="Build a song arrangement for STYLE (e.g. pop, edm, jazz). "
+             "Use 'list' to show available styles."
+    )
+
+    parser.add_argument(
+        "--artist-title",
+        type=str,
+        default="Untitled",
+        help="Song title for --artist arrangement (default: 'Untitled')"
+    )
+
+    parser.add_argument(
+        "--artist-key",
+        type=str,
+        default=None,
+        help="Key for --artist arrangement (e.g. C, D#)"
+    )
+
+    parser.add_argument(
+        "--artist-bpm",
+        type=int,
+        default=None,
+        help="BPM override for --artist arrangement"
+    )
+
+    parser.add_argument(
+        "--lesson",
+        type=str,
+        metavar="LESSON_ID",
+        help="Start a music theory lesson (e.g. el_01). "
+             "Use 'list' to show all lessons."
+    )
+
+    parser.add_argument(
+        "--exercise",
+        type=str,
+        metavar="TYPE",
+        help="Run a practice exercise (e.g. scale_building, chord_building). "
+             "Use 'list' to see all exercise types."
+    )
+
+    parser.add_argument(
+        "--exercise-difficulty",
+        type=str,
+        default="beginner",
+        choices=["beginner", "intermediate", "advanced"],
+        help="Difficulty for --exercise (default: beginner)"
+    )
+
+    parser.add_argument(
+        "--inspiration",
+        action="store_true",
+        help="Print a random creative inspiration prompt"
+    )
     
     args = parser.parse_args()
     
+    # ------------------------------------------------------------------
+    # Lightweight commands that don't need the studio to be fully started
+    # ------------------------------------------------------------------
+
+    if args.elements:
+        print("\n🎵 Elements – available scales:")
+        for s in list_scales():
+            print(f"   {s}")
+        print("\n🎵 Elements – available chord types:")
+        for c in list_chords():
+            print(f"   {c}")
+        print("\n🎵 Elements – available rhythm patterns:")
+        for r in list_rhythms():
+            print(f"   {r}")
+        return
+
+    if args.dance == "list":
+        print("\n🥁 Available dance genres:")
+        for g in list_genres():
+            print(f"   {genre_description(g)}")
+        return
+
+    if args.artist == "list":
+        print("\n🎸 Available artist styles:", ", ".join(list_styles()))
+        return
+
+    if args.lesson == "list":
+        print("\n📖 Available lessons:")
+        from music_ai_core.learning import LESSONS
+        for lid in list_lessons():
+            lesson = LESSONS[lid]
+            print(f"   {lid:6s} | {lesson.track:8s} | {lesson.difficulty:14s} | {lesson.title}")
+        return
+
+    if args.exercise == "list":
+        print("\n🎯 Available exercise types:", ", ".join(list_exercise_types()))
+        return
+
+    # ------------------------------------------------------------------
+    # Full studio commands
+    # ------------------------------------------------------------------
+
     # Initialize studio
     studio = MusicAIStudio(use_chatgpt=args.chatgpt, sample_rate=args.sample_rate)
     
@@ -120,6 +253,46 @@ Examples:
         else:
             print(f"Example {args.example} not found. Available: 1-5")
         return
+
+    # Dance beat generation
+    if args.dance:
+        studio.generate_beat(
+            genre=args.dance,
+            bpm=args.dance_bpm,
+            bars=args.dance_bars,
+        )
+        mixed = studio.studio.mix()
+        if mixed.size:
+            print(f"✓ Mixed beat: {mixed.shape[1]} samples "
+                  f"({mixed.shape[1] / studio.sample_rate:.2f}s)")
+        return
+
+    # Artist arrangement
+    if args.artist:
+        result = studio.build_arrangement(
+            title=args.artist_title,
+            style=args.artist,
+            key=args.artist_key,
+            bpm=args.artist_bpm,
+        )
+        print("\n📋 Arrangement JSON:")
+        print(json.dumps(result, indent=2, default=str))
+        return
+
+    # Inspiration
+    if args.inspiration:
+        studio.get_inspiration()
+        return
+
+    # Lesson
+    if args.lesson:
+        studio.start_lesson(args.lesson)
+        return
+
+    # Exercise
+    if args.exercise:
+        studio.practice_exercise(args.exercise, args.exercise_difficulty)
+        return
     
     # Interactive mode
     if args.interactive:
@@ -146,7 +319,17 @@ def interactive_mode(studio: MusicAIStudio):
         "effect <track> <type> <params>": "Add effect (reverb/delay/compression)",
         "mix": "Mix and show result",
         "prompt <text>": "Process music prompt",
-        "quit": "Exit"
+        # new module commands
+        "scale <root> [type] [octave]": "Show notes of a scale (e.g. 'scale C major 4')",
+        "chord <root> [type] [octave]": "Show notes of a chord (e.g. 'chord A minor 4')",
+        "melody <track> <root> [type]": "Generate a scale melody to a track",
+        "beat <genre> [bpm] [bars]": "Generate a drum beat (e.g. 'beat house 125 4')",
+        "arrange <style> [title]": "Build a song arrangement (e.g. 'arrange pop MySong')",
+        "inspire": "Get a random creative inspiration",
+        "lesson <id>": "Start a lesson (e.g. 'lesson el_01'; 'lesson list')",
+        "exercise <type>": "Run a practice exercise (e.g. 'exercise scale_building')",
+        "score": "Show your learning score",
+        "quit": "Exit",
     }
     
     while True:
@@ -206,6 +389,119 @@ def interactive_mode(studio: MusicAIStudio):
                     print(f"✓ Interpretation:")
                     print(f"  Genre: {interp.get('genre')}")
                     print(f"  Tempo: {interp.get('tempo')}")
+                continue
+
+            # ----------------------------------------------------------
+            # Elements commands
+            # ----------------------------------------------------------
+
+            if user_input.lower().startswith("scale"):
+                parts = user_input.split()
+                root = parts[1] if len(parts) > 1 else "C"
+                scale_type = parts[2] if len(parts) > 2 else "major"
+                octave = int(parts[3]) if len(parts) > 3 else 4
+                try:
+                    notes = studio.get_scale(root, scale_type, octave)
+                    note_names = " ".join(k.rstrip("01234567890") for k, _ in notes)
+                    print(f"✓ {root} {scale_type}: {note_names}")
+                except ValueError as e:
+                    print(f"❌ {e}")
+                continue
+
+            if user_input.lower().startswith("chord"):
+                parts = user_input.split()
+                root = parts[1] if len(parts) > 1 else "C"
+                chord_type = parts[2] if len(parts) > 2 else "major"
+                octave = int(parts[3]) if len(parts) > 3 else 4
+                try:
+                    notes = studio.get_chord(root, chord_type, octave)
+                    note_names = " ".join(k.rstrip("01234567890") for k, _ in notes)
+                    print(f"✓ {root} {chord_type}: {note_names}")
+                except ValueError as e:
+                    print(f"❌ {e}")
+                continue
+
+            if user_input.lower().startswith("melody"):
+                parts = user_input.split()
+                if len(parts) >= 3:
+                    track = parts[1]
+                    root = parts[2]
+                    scale_type = parts[3] if len(parts) > 3 else "major"
+                    studio.generate_scale_melody(track, root, scale_type)
+                else:
+                    print("Usage: melody <track_name> <root> [scale_type]")
+                continue
+
+            # ----------------------------------------------------------
+            # Dance command
+            # ----------------------------------------------------------
+
+            if user_input.lower().startswith("beat"):
+                parts = user_input.split()
+                genre = parts[1] if len(parts) > 1 else "house"
+                bpm = int(parts[2]) if len(parts) > 2 else None
+                bars = int(parts[3]) if len(parts) > 3 else 4
+                try:
+                    studio.generate_beat(genre=genre, bpm=bpm, bars=bars)
+                except ValueError as e:
+                    print(f"❌ {e}")
+                continue
+
+            # ----------------------------------------------------------
+            # Artist mode commands
+            # ----------------------------------------------------------
+
+            if user_input.lower().startswith("arrange"):
+                parts = user_input.split(maxsplit=2)
+                style = parts[1] if len(parts) > 1 else "pop"
+                title = parts[2] if len(parts) > 2 else "Untitled"
+                try:
+                    studio.build_arrangement(title=title, style=style)
+                except ValueError as e:
+                    print(f"❌ {e}")
+                continue
+
+            if user_input.lower().strip() == "inspire":
+                studio.get_inspiration()
+                continue
+
+            # ----------------------------------------------------------
+            # Learning commands
+            # ----------------------------------------------------------
+
+            if user_input.lower().startswith("lesson"):
+                parts = user_input.split()
+                lesson_id = parts[1] if len(parts) > 1 else "list"
+                if lesson_id == "list":
+                    from music_ai_core.learning import LESSONS, list_lessons
+                    print("\n📖 Available lessons:")
+                    for lid in list_lessons():
+                        lesson = LESSONS[lid]
+                        print(f"   {lid:6s} | {lesson.track:8s} | "
+                              f"{lesson.difficulty:14s} | {lesson.title}")
+                else:
+                    try:
+                        studio.start_lesson(lesson_id)
+                    except ValueError as e:
+                        print(f"❌ {e}")
+                continue
+
+            if user_input.lower().startswith("exercise"):
+                parts = user_input.split()
+                ex_type = parts[1] if len(parts) > 1 else "note_identification"
+                difficulty = parts[2] if len(parts) > 2 else "beginner"
+                if ex_type == "list":
+                    from music_ai_core.learning import list_exercise_types
+                    print("Available exercise types:", ", ".join(list_exercise_types()))
+                else:
+                    try:
+                        studio.practice_exercise(ex_type, difficulty)
+                    except Exception as e:
+                        print(f"❌ {e}")
+                continue
+
+            if user_input.lower().strip() == "score":
+                studio.get_learning_score()
                 continue
             
             print(f"❌ Unknown command: {user_input}")

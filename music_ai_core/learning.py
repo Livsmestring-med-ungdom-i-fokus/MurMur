@@ -17,19 +17,14 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from music_ai_core.elements import (
     ALL_NOTE_NAMES,
     SCALE_PATTERNS,
-    CHORD_INTERVALS,
-    RHYTHM_PATTERNS,
     get_scale,
     get_chord,
     interval_name,
-    list_scales,
-    list_chords,
-    list_rhythms,
 )
 
 
@@ -289,7 +284,7 @@ class ExerciseGenerator:
         return Exercise(
             id=f"note_id_{note}",
             exercise_type="note_identification",
-            question=f"Which note sits between G# and A# on the chromatic scale?",
+            question="Which note sits between G# and A# on the chromatic scale?",
             options=options,
             correct_answer=note,
             explanation=f"The note '{note}' is part of the 12-note chromatic scale.",
@@ -433,8 +428,8 @@ class ExerciseGenerator:
         return Exercise(
             id=f"meter_{correct.replace('/', '_')}",
             exercise_type="meter_identification",
-            question=f"A piece feels like a strong ONE-two-three-ONE-two-three pattern. "
-                     f"Which time signature is it most likely in?",
+            question=("A piece feels like a strong ONE-two-three-ONE-two-three pattern. "
+                      "Which time signature is it most likely in?"),
             options=options,
             correct_answer=correct,
             explanation=meters[correct],

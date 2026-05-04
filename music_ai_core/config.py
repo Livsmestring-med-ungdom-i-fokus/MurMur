@@ -5,7 +5,7 @@ Manage system settings and module configurations.
 """
 
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 import json
 from pathlib import Path
 
@@ -48,7 +48,7 @@ class ModelConfig:
 
 class SystemConfig:
     """System configuration manager."""
-    
+
     def __init__(self):
         """Initialize configuration."""
         self.audio = AudioConfig()
@@ -56,45 +56,45 @@ class SystemConfig:
         self.chatgpt = ChatGPTConfig()
         self.model = ModelConfig()
         self.custom: Dict[str, Any] = {}
-    
+
     def load_from_file(self, filepath: str) -> None:
         """
         Load configuration from JSON file.
-        
+
         Args:
             filepath: Path to config file
         """
         config_path = Path(filepath)
-        
+
         if not config_path.exists():
             raise FileNotFoundError(f"Config file not found: {filepath}")
-        
+
         with open(config_path, 'r') as f:
             config_data = json.load(f)
-        
+
         # Load sections
         if "audio" in config_data:
             audio_cfg = config_data["audio"]
             self.audio = AudioConfig(**audio_cfg)
-        
+
         if "studio" in config_data:
             studio_cfg = config_data["studio"]
             self.studio = StudioConfig(**studio_cfg)
-        
+
         if "chatgpt" in config_data:
             chatgpt_cfg = config_data["chatgpt"]
             self.chatgpt = ChatGPTConfig(**chatgpt_cfg)
-        
+
         if "model" in config_data:
             model_cfg = config_data["model"]
             self.model = ModelConfig(**model_cfg)
-        
+
         self.custom = config_data.get("custom", {})
-    
+
     def save_to_file(self, filepath: str) -> None:
         """
         Save configuration to JSON file.
-        
+
         Args:
             filepath: Path to save config
         """
@@ -125,13 +125,13 @@ class SystemConfig:
             },
             "custom": self.custom
         }
-        
+
         config_path = Path(filepath)
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         with open(config_path, 'w') as f:
             json.dump(config_data, f, indent=2)
-    
+
     def get_config_dict(self) -> Dict[str, Any]:
         """Get full configuration as dictionary."""
         return {

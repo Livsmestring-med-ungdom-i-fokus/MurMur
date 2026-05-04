@@ -6,6 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 from music_ai_core.audio import load_audio, mel_spectrogram
 from music_ai_core.model import get_model
 
+
 class MelDataset(Dataset):
     def __init__(self, folder, sr=22050, n_mels=80, seq_len=128):
         self.paths = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.wav')]
@@ -24,6 +25,7 @@ class MelDataset(Dataset):
             S = np.concatenate([S, pad], axis=1)
         S = S[:, :self.seq_len]
         return torch.tensor(S, dtype=torch.float32)
+
 
 def train(args):
     ds = MelDataset(args.data, sr=args.sr, n_mels=args.n_mels, seq_len=args.seq_len)
@@ -51,6 +53,7 @@ def train(args):
         print(f"Epoch {epoch+1}/{args.epochs} loss={total/len(dl):.4f}")
     torch.save(model.state_dict(), args.out)
     print("Saved model to", args.out)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

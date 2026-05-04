@@ -9,13 +9,13 @@ def infer(args):
     """Load audio, extract mel spectrogram, run through model, save output."""
     y, sr = load_audio(args.input, sr=args.sr)
     S = mel_spectrogram(y, sr, n_mels=args.n_mels)
-    
+
     # Pad or crop to seq_len
     if S.shape[1] < args.seq_len:
         pad = np.zeros((args.n_mels, args.seq_len - S.shape[1]))
         S = np.concatenate([S, pad], axis=1)
     S = S[:, :args.seq_len]
-    
+
     # Load model and run inference
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = get_model(args.model_type, n_mels=args.n_mels, seq_len=args.seq_len, latent=args.latent)
@@ -33,18 +33,17 @@ def infer(args):
             x_rec = x_rec.squeeze(0).cpu().numpy()
         else:
             x_rec = x_rec.squeeze(0).cpu().numpy()
-    
+
     np.save(args.output, x_rec)
     print(f"Saved reconstructed mel spectrogram to {args.output}")
-    
+
     # Optionally reconstruct waveform using Griffin-Lim
     if args.save_wav:
         wav_output = args.output.replace('.npy', '.wav')
-        y_rec = reconstruct_audio(x_rec, sr=sr, n_fft=args.n_fft, hop_length=args.hop_length, 
+        y_rec = reconstruct_audio(x_rec, sr=sr, n_fft=args.n_fft, hop_length=args.hop_length,
                                   n_mels=args.n_mels, iterations=args.gl_iter)
         save_audio(y_rec, sr, wav_output)
         print(f"Saved reconstructed audio to {wav_output}")
-
 
 
 if __name__ == '__main__':

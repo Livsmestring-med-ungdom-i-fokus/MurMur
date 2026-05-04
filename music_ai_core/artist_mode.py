@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -79,8 +79,8 @@ STYLE_PRESETS: Dict[str, StylePreset] = {
         default_key="C",
         default_scale="major",
         section_order=["intro", "verse", "pre_chorus", "chorus",
-                        "verse", "pre_chorus", "chorus", "bridge",
-                        "chorus", "outro"],
+                       "verse", "pre_chorus", "chorus", "bridge",
+                       "chorus", "outro"],
         section_bars={
             "intro": 4, "verse": 8, "pre_chorus": 4,
             "chorus": 8, "bridge": 4, "outro": 4,
@@ -102,7 +102,7 @@ STYLE_PRESETS: Dict[str, StylePreset] = {
         default_key="A",
         default_scale="minor",
         section_order=["intro", "verse", "pre_chorus", "drop",
-                        "breakdown", "verse", "pre_chorus", "drop", "outro"],
+                       "breakdown", "verse", "pre_chorus", "drop", "outro"],
         section_bars={
             "intro": 8, "verse": 8, "pre_chorus": 4,
             "drop": 16, "breakdown": 8, "outro": 8,
@@ -143,7 +143,7 @@ STYLE_PRESETS: Dict[str, StylePreset] = {
         default_key="D",
         default_scale="minor",
         section_order=["intro", "verse", "chorus", "verse", "chorus",
-                        "bridge", "chorus", "outro"],
+                       "bridge", "chorus", "outro"],
         section_bars={
             "intro": 4, "verse": 16, "chorus": 8, "bridge": 8, "outro": 4,
         },

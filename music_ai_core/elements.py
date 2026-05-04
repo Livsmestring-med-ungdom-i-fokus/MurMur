@@ -9,7 +9,7 @@ Provides the fundamental musical primitives needed by all other modules:
 - Rhythm pattern definitions
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 
 # ---------------------------------------------------------------------------

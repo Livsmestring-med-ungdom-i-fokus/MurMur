@@ -6,40 +6,37 @@ Integrates ChatGPT, Live Studio, ML models, and the five learning modules:
 Elements, Vocal, Dance, Artist Mode, and Learning.
 """
 
-import argparse
 from typing import Optional
-import sys
-from pathlib import Path
 
 from music_ai_core.orchestrator import ModuleOrchestrator
 from music_ai_core.chatgpt_integration import ChatGPTModule
 from music_ai_core.live_studio import LiveMusicStudio
 from music_ai_core.model import SimpleAutoencoder
-from music_ai_core.elements import get_scale, get_chord, melody_from_scale, list_scales
+from music_ai_core.elements import get_scale, get_chord, melody_from_scale
 from music_ai_core.vocal import VocalSynthesizer
-from music_ai_core.dance import BeatGenerator, DANCE_GENRES, list_genres
-from music_ai_core.artist_mode import ArtistMode, list_styles
-from music_ai_core.learning import LearningSession, list_lessons, list_exercise_types
+from music_ai_core.dance import BeatGenerator, DANCE_GENRES
+from music_ai_core.artist_mode import ArtistMode
+from music_ai_core.learning import LearningSession
 
 
 class MusicAIStudio:
     """Main application class for music AI studio."""
-    
+
     def __init__(self, use_chatgpt: bool = False, sample_rate: int = 44100):
         """
         Initialize Music AI Studio.
-        
+
         Args:
             use_chatgpt: Whether to enable ChatGPT integration
             sample_rate: Audio sample rate in Hz
         """
         self.orchestrator = ModuleOrchestrator()
         self.sample_rate = sample_rate
-        
+
         # Initialize modules
         self.studio = LiveMusicStudio(sample_rate=sample_rate, num_tracks=8)
         self.orchestrator.register_module("studio", self.studio)
-        
+
         # ChatGPT module (optional)
         if use_chatgpt:
             try:
@@ -50,7 +47,7 @@ class MusicAIStudio:
                 self.chatgpt = None
         else:
             self.chatgpt = None
-        
+
         # AI Model
         self.model = SimpleAutoencoder(n_mels=80, latent_dim=128, seq_len=128)
         self.orchestrator.register_module("model", self.model)
@@ -70,32 +67,32 @@ class MusicAIStudio:
         # Learning session
         self.learning = LearningSession()
         self.orchestrator.register_module("learning", self.learning)
-        
+
         print("✓ Music AI Studio initialized")
         self._print_system_status()
-    
+
     def get_music_prompt(self, prompt: str) -> dict:
         """
         Process a music generation prompt.
-        
+
         Args:
             prompt: User's music request
-            
+
         Returns:
             Processing result
         """
         print(f"\n🎵 Processing: {prompt}")
         result = self.orchestrator.process_music_request(prompt)
         return result
-    
+
     def create_composition(self, name: str, description: str) -> dict:
         """
         Create a new composition.
-        
+
         Args:
             name: Composition name
             description: Composition description
-            
+
         Returns:
             Composition metadata
         """
@@ -104,17 +101,17 @@ class MusicAIStudio:
             "description": description,
             "tracks": self.studio.get_studio_state()
         }
-        
+
         if self.chatgpt:
             interpretation = self.chatgpt.interpret_music_prompt(description)
             composition["interpretation"] = interpretation
-        
+
         return composition
-    
+
     def generate_track(self, track_name: str, notes_description: str) -> None:
         """
         Generate a music track.
-        
+
         Args:
             track_name: Name of track
             notes_description: Description of notes to generate
@@ -124,23 +121,23 @@ class MusicAIStudio:
             "C": 261.63, "D": 293.66, "E": 329.63, "F": 349.23,
             "G": 391.99, "A": 440.0, "B": 493.88
         }
-        
+
         # Parse simple note sequence (e.g., "C D E F G")
         note_names = notes_description.split()
         notes = []
-        
+
         for note_name in note_names:
             if note_name in note_map:
                 notes.append((note_map[note_name], 0.5))  # 0.5 second per note
-        
+
         if notes:
             self.studio.generate_track(track_name, notes, waveform="sine")
             print(f"✓ Generated {track_name} with {len(notes)} notes")
-    
+
     def add_effect_to_track(self, track_name: str, effect: str, **params) -> None:
         """
         Add effect to track.
-        
+
         Args:
             track_name: Target track
             effect: Effect type (reverb, delay, compression)
@@ -148,12 +145,12 @@ class MusicAIStudio:
         """
         self.studio.apply_effect(track_name, effect, **params)
         print(f"✓ Applied {effect} to {track_name}")
-    
+
     def set_studio_tempo(self, bpm: int) -> None:
         """Set studio tempo."""
         self.studio.set_tempo(bpm)
         print(f"✓ Tempo set to {bpm} BPM")
-    
+
     def get_studio_state(self) -> dict:
         """Get current studio state."""
         return self.studio.get_studio_state()
@@ -220,7 +217,6 @@ class MusicAIStudio:
             vibrato_rate: Vibrato speed (Hz)
             chorus: Whether to apply chorus effect
         """
-        import numpy as np
         audio = self.vocal.synthesize_vocal_line(
             syllables, frequencies, durations, vibrato_rate=vibrato_rate
         )
@@ -312,7 +308,6 @@ class MusicAIStudio:
         Returns:
             Lesson metadata as a dict.
         """
-        from music_ai_core.learning import LESSONS
         lesson = self.learning.start_lesson(lesson_id)
         print(f"\n📖 Lesson: {lesson.title} [{lesson.track} / {lesson.difficulty}]")
         print(f"   {lesson.description}")
@@ -352,7 +347,7 @@ class MusicAIStudio:
             "explanation": exercise.explanation,
             "hints": exercise.hints,
         }
-    
+
     def get_learning_score(self) -> dict:
         """Return the current learning session score."""
         score = self.learning.get_score()

@@ -45,6 +45,13 @@ from music_ai_core.learning import (
     list_exercise_types,
 )
 
+from music_ai_core.audio import load_audio, mel_spectrogram
+from music_ai_core.model import SimpleAutoencoder
+from music_ai_core.live_studio import LiveMusicStudio, InstrumentSynthesizer, EffectsProcessor
+from music_ai_core.chatgpt_integration import ChatGPTModule
+from music_ai_core.orchestrator import ModuleOrchestrator
+from music_ai_core.config import get_default_config
+
 __all__ = [
     # elements
     "NOTE_FREQUENCIES", "ALL_NOTE_NAMES", "SCALE_PATTERNS", "CHORD_INTERVALS",
@@ -62,4 +69,14 @@ __all__ = [
     # learning
     "LearningSession", "ExerciseGenerator", "StudentProgress",
     "LESSONS", "list_lessons", "list_exercise_types",
+    # audio / model
+    "load_audio", "mel_spectrogram", "SimpleAutoencoder",
+    # live studio
+    "LiveMusicStudio", "InstrumentSynthesizer", "EffectsProcessor",
+    # chatgpt
+    "ChatGPTModule",
+    # orchestrator
+    "ModuleOrchestrator",
+    # config
+    "get_default_config",
 ]

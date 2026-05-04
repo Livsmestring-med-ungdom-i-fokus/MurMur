@@ -14,7 +14,7 @@ def test_imports():
     print("🔍 Testing module imports...")
 
     try:
-        from music_ai_core import (  # noqa: F401
+        from music_ai_core import (
             load_audio,
             mel_spectrogram,
             SimpleAutoencoder,
@@ -25,6 +25,16 @@ def test_imports():
             ModuleOrchestrator,
             get_default_config
         )
+        # Verify the imports are the expected types
+        assert callable(load_audio)
+        assert callable(mel_spectrogram)
+        assert callable(SimpleAutoencoder)
+        assert callable(LiveMusicStudio)
+        assert callable(InstrumentSynthesizer)
+        assert callable(EffectsProcessor)
+        assert callable(ChatGPTModule)
+        assert callable(ModuleOrchestrator)
+        assert callable(get_default_config)
         print("   ✓ All imports successful")
         return True
     except ImportError as e:

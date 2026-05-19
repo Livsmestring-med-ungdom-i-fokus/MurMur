@@ -185,7 +185,7 @@ class LiveMusicStudio:
         self.tracks[track_name] = audio
     
     def generate_track(self, track_name: str, notes: List[Tuple[float, float]], 
-                      waveform: str = "sine") -> np.ndarray:
+                       waveform: str = "sine") -> np.ndarray:
         """
         Generate a track from note sequence.
         
@@ -197,8 +197,19 @@ class LiveMusicStudio:
         Returns:
             Generated audio
         """
+        if track_name not in self.tracks:
+            raise ValueError(f"Track {track_name} not found")
+        if not notes:
+            empty_track = np.array([], dtype=float)
+            self.record_track(track_name, empty_track)
+            return empty_track
+
         audio_segments = []
         for freq, duration in notes:
+            if duration <= 0:
+                raise ValueError(f"Note duration must be positive, got {duration}")
+            if freq <= 0:
+                raise ValueError(f"Note frequency must be positive, got {freq}")
             segment = self.synthesizer.synthesize_note(freq, duration, waveform)
             audio_segments.append(segment)
         

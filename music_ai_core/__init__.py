@@ -1,3 +1,17 @@
+from music_ai_core.audio import load_audio, mel_spectrogram, reconstruct_audio, save_audio
+from music_ai_core.model import SimpleAutoencoder, ConvAutoencoder, get_model
+from music_ai_core.live_studio import LiveMusicStudio, InstrumentSynthesizer, EffectsProcessor
+from music_ai_core.chatgpt_integration import ChatGPTModule
+from music_ai_core.orchestrator import ModuleOrchestrator, ModuleState
+from music_ai_core.config import (
+    AudioConfig,
+    StudioConfig,
+    ChatGPTConfig,
+    ModelConfig,
+    SystemConfig,
+    get_default_config,
+)
+
 __version__ = "0.2.0"
 
 from music_ai_core.elements import (
@@ -46,6 +60,14 @@ from music_ai_core.learning import (
 )
 
 __all__ = [
+    # core audio/model/studio/orchestration/config
+    "load_audio", "mel_spectrogram", "reconstruct_audio", "save_audio",
+    "SimpleAutoencoder", "ConvAutoencoder", "get_model",
+    "LiveMusicStudio", "InstrumentSynthesizer", "EffectsProcessor",
+    "ChatGPTModule",
+    "ModuleOrchestrator", "ModuleState",
+    "AudioConfig", "StudioConfig", "ChatGPTConfig", "ModelConfig",
+    "SystemConfig", "get_default_config",
     # elements
     "NOTE_FREQUENCIES", "ALL_NOTE_NAMES", "SCALE_PATTERNS", "CHORD_INTERVALS",
     "RHYTHM_PATTERNS", "get_scale", "get_chord", "scale_frequencies",
